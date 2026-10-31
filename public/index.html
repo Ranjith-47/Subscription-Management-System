@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brightloop Software | Unified Subscription & Recurring Billing</title>
+  <!-- Google Fonts & Tailwind CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            brand: {
+              50: '#eef6ff',
+              100: '#d9eaff',
+              200: '#bbdcff',
+              500: '#2563eb',
+              600: '#1d4ed8',
+              700: '#1e40af',
+              900: '#0f172a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased flex flex-col selection:bg-blue-600 selection:text-white">
+
+  <!-- Top Announcement Bar / Quick Persona Switcher -->
+  <header class="bg-slate-950 border-b border-slate-800 px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-3 sticky top-0 z-50">
+    <div class="flex items-center gap-2">
+      <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+      <span class="font-medium text-slate-300">Brightloop Subscription OS</span>
+      <span class="text-slate-500">|</span>
+      <span id="speedBenchmark" class="text-emerald-400 font-mono font-medium flex items-center gap-1">
+        <i data-lucide="zap" class="w-3.5 h-3.5"></i> Response: &lt; 2ms (SLA &lt; 2000ms)
+      </span>
+    </div>
+
+    <!-- Quick Role Switcher -->
+    <div class="flex items-center gap-2">
+      <span class="text-slate-400 font-semibold mr-1">Switch Persona:</span>
+      <button onclick="loginAs('admin@brightloop.com', 'Brightloop@2026')" class="persona-btn bg-slate-800 hover:bg-slate-700 text-amber-300 px-2.5 py-1 rounded border border-amber-500/30 flex items-center gap-1 transition">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i> Admin
+      </button>
+      <button onclick="loginAs('sales@brightloop.com', 'StaffLoop@2026')" class="persona-btn bg-slate-800 hover:bg-slate-700 text-blue-300 px-2.5 py-1 rounded border border-blue-500/30 flex items-center gap-1 transition">
+        <i data-lucide="briefcase" class="w-3.5 h-3.5 text-blue-400"></i> Staff
+      </button>
+      <button onclick="loginAs('alice@acmeshop.com', 'Customer@2026')" class="persona-btn bg-slate-800 hover:bg-slate-700 text-emerald-300 px-2.5 py-1 rounded border border-emerald-500/30 flex items-center gap-1 transition">
+        <i data-lucide="user" class="w-3.5 h-3.5 text-emerald-400"></i> Customer (Alice)
+      </button>
+      <button onclick="openModal('modalAuth')" id="authActionButton" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-3 py-1 rounded transition ml-2 flex items-center gap-1">
+        <i data-lucide="log-in" class="w-3.5 h-3.5"></i> <span id="authButtonLabel">Sign In</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-slate-950/80 backdrop-blur-md border-r border-slate-800/80 flex flex-col shrink-0">
+      <!-- Brand Logo -->
+      <div class="p-5 border-b border-slate-800/80 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-bold text-xl">
+          <i data-lucide="refresh-cw" class="w-5 h-5 animate-spin-slow"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-base text-white tracking-tight flex items-center gap-1.5">
+            Brightloop <span class="bg-blue-500/20 text-blue-400 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border border-blue-500/30">v2.0</span>
+          </h1>
+          <p class="text-[11px] text-slate-400">Subscription & Billing Engine</p>
+        </div>
+      </div>
+
+      <!-- Current User Profile Chip -->
+      <div id="currentUserBadge" class="mx-3 mt-3 p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <div id="userAvatar" class="w-8 h-8 rounded-full bg-blue-600/30 text-blue-400 font-bold flex items-center justify-center shrink-0 border border-blue-500/30 text-xs">
+            A
+          </div>
+          <div class="truncate">
+            <div id="userNameDisplay" class="text-xs font-semibold text-slate-200 truncate">Sarah Jenkins</div>
+            <div id="userRoleDisplay" class="text-[10px] font-mono text-amber-400 uppercase tracking-wider">ADMIN</div>
+          </div>
+        </div>
+        <button onclick="handleLogout()" title="Sign Out" class="text-slate-400 hover:text-rose-400 p-1">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium active-nav">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 text-blue-400"></i>
+          <span>Finance & MRR</span>
+        </button>
+
+        <button onclick="switchTab('subscriptions')" id="nav-subscriptions" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium">
+          <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i>
+          <span>Subscriptions</span>
+          <span id="activeSubsCountBadge" class="ml-auto bg-indigo-500/20 text-indigo-300 font-mono text-[10px] px-2 py-0.5 rounded-full border border-indigo-500/30">0</span>
+        </button>
+
+        <button onclick="switchTab('billing')" id="nav-billing" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium">
+          <i data-lucide="calendar-check" class="w-4 h-4 text-emerald-400"></i>
+          <span>Billing Day Engine</span>
+          <span class="ml-auto flex h-2 w-2 relative">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+        </button>
+
+        <button onclick="switchTab('invoices')" id="nav-invoices" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium">
+          <i data-lucide="file-text" class="w-4 h-4 text-amber-400"></i>
+          <span>Invoices</span>
+          <span id="overdueCountBadge" class="ml-auto bg-rose-500/20 text-rose-300 font-mono text-[10px] px-2 py-0.5 rounded-full border border-rose-500/30">0</span>
+        </button>
+
+        <button onclick="switchTab('payments')" id="nav-payments" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium">
+          <i data-lucide="credit-card" class="w-4 h-4 text-teal-400"></i>
+          <span>Payments Ledger</span>
+        </button>
+
+        <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Catalog & Rules</div>
+
+        <button onclick="switchTab('products')" id="nav-products" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium">
+          <i data-lucide="box" class="w-4 h-4 text-violet-400"></i>
+          <span>Products & Variants</span>
+        </button>
+
+        <button onclick="switchTab('plans')" id="nav-plans" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium">
+          <i data-lucide="tag" class="w-4 h-4 text-pink-400"></i>
+          <span>Plans & Policies</span>
+        </button>
+
+        <button onclick="switchTab('templates')" id="nav-templates" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4 text-cyan-400"></i>
+          <span>Quotation Templates</span>
+        </button>
+
+        <button onclick="switchTab('discounts-taxes')" id="nav-discounts-taxes" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium admin-only-nav">
+          <i data-lucide="percent" class="w-4 h-4 text-orange-400"></i>
+          <span>Taxes & Discounts</span>
+        </button>
+
+        <button onclick="switchTab('staff')" id="nav-staff" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium admin-only-nav">
+          <i data-lucide="users" class="w-4 h-4 text-yellow-400"></i>
+          <span>Staff Access (RBAC)</span>
+        </button>
+
+        <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Customer Self-Service</div>
+
+        <button onclick="switchTab('portal')" id="nav-portal" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium">
+          <i data-lucide="external-link" class="w-4 h-4 text-emerald-400"></i>
+          <span>Customer Portal</span>
+        </button>
+
+        <button onclick="switchTab('audit')" id="nav-audit" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800/70 hover:text-white transition group font-medium">
+          <i data-lucide="history" class="w-4 h-4 text-slate-400"></i>
+          <span>Audit Trail</span>
+        </button>
+      </nav>
+
+      <!-- System Reset / Reseed Trigger -->
+      <div class="p-3 border-t border-slate-800 text-xs">
+        <button onclick="reseedDatabase()" class="w-full text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 p-2 rounded-lg flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="database" class="w-3.5 h-3.5 text-blue-400"></i> Reset Demo Data
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto bg-slate-900 flex flex-col">
+
+      <!-- View Container -->
+      <div class="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6">
+
+        <!-- TAB 1: EXECUTIVE FINANCE LEAD DASHBOARD -->
+        <section id="view-dashboard" class="view-panel space-y-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Financial Overview & Recurring Revenue</h2>
+              <p class="text-sm text-slate-400 mt-1">Real-time metrics for finance lead: MRR, ARR, active subscriptions, and overdue cashflows.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 flex items-center gap-1.5 font-mono">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-blue-400"></i> <span id="dashQueryTime">Query: 0.8ms</span>
+              </span>
+              <button onclick="loadDashboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+                <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Top Executive Metric KPI Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- MRR -->
+            <div class="kpi-card bg-slate-950/80 border border-slate-800 p-5 rounded-2xl relative overflow-hidden shadow-sm">
+              <div class="flex items-center justify-between text-slate-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Monthly Recurring (MRR)</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                  <i data-lucide="trending-up" class="w-4 h-4"></i>
+                </div>
+              </div>
+              <div id="kpiMrr" class="text-2xl font-bold text-white font-mono">$0.00</div>
+              <div class="text-xs text-blue-400/90 mt-1 flex items-center gap-1">
+                <span>Normalized from all frequencies</span>
+              </div>
+            </div>
+
+            <!-- ARR -->
+            <div class="kpi-card bg-slate-950/80 border border-slate-800 p-5 rounded-2xl relative overflow-hidden shadow-sm">
+              <div class="flex items-center justify-between text-slate-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Annual Run Rate (ARR)</span>
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                  <i data-lucide="calendar" class="w-4 h-4"></i>
+                </div>
+              </div>
+              <div id="kpiArr" class="text-2xl font-bold text-white font-mono">$0.00</div>
+              <div class="text-xs text-indigo-400/90 mt-1 flex items-center gap-1">
+                <span>12x monthly recurring volume</span>
+              </div>
+            </div>
+
+            <!-- Total Revenue Collected -->
+            <div class="kpi-card bg-slate-950/80 border border-slate-800 p-5 rounded-2xl relative overflow-hidden shadow-sm">
+              <div class="flex items-center justify-between text-slate-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Revenue Collected</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                  <i data-lucide="check-circle" class="w-4 h-4"></i>
+                </div>
+              </div>
+              <div id="kpiCollected" class="text-2xl font-bold text-emerald-400 font-mono">$0.00</div>
+              <div class="text-xs text-emerald-500/80 mt-1">Paid in bank & online payments</div>
+            </div>
+
+            <!-- Overdue Cashflow -->
+            <div class="kpi-card bg-slate-950/80 border border-rose-900/30 p-5 rounded-2xl relative overflow-hidden shadow-sm">
+              <div class="flex items-center justify-between text-slate-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-rose-400">Overdue Unpaid</span>
+                <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center">
+                  <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                </div>
+              </div>
+              <div id="kpiOverdue" class="text-2xl font-bold text-rose-400 font-mono">$0.00</div>
+              <div class="text-xs text-rose-400/80 mt-1 flex items-center gap-1">
+                <span id="kpiOverdueCount">0 invoices</span> past due date
+              </div>
+            </div>
+          </div>
+
+          <!-- Secondary Row: Subscription Lifecycle Distribution & Plan Breakdown -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Subscription State Counts -->
+            <div class="bg-slate-950/70 border border-slate-800 p-5 rounded-2xl">
+              <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-blue-400"></i> Subscription Portfolio
+              </h3>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Active Subscriptions
+                  </span>
+                  <span id="dashActiveCount" class="font-mono font-bold text-emerald-400">0</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Paused Subscriptions
+                  </span>
+                  <span id="dashPausedCount" class="font-mono font-bold text-amber-400">0</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Quotations / Drafts
+                  </span>
+                  <span id="dashQuotesCount" class="font-mono font-bold text-blue-400">0</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-slate-400 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span> Closed / Terminated
+                  </span>
+                  <span id="dashClosedCount" class="font-mono font-bold text-slate-400">0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Aging Analysis Buckets -->
+            <div class="bg-slate-950/70 border border-slate-800 p-5 rounded-2xl lg:col-span-2">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                  <i data-lucide="bar-chart-2" class="w-4 h-4 text-rose-400"></i> Overdue Invoice Aging Analysis
+                </h3>
+                <span class="text-xs text-slate-400">Days overdue distribution</span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center" id="agingBucketsContainer">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Overdue Invoices Priority Action List -->
+          <div class="bg-slate-950/70 border border-slate-800 rounded-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i> Overdue Invoices Requiring Chase
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">Solve the manual scrolling problem: chase overdue accounts in one click.</p>
+              </div>
+              <span id="overdueCountPill" class="bg-rose-500/20 text-rose-300 text-xs font-mono px-2.5 py-1 rounded-full border border-rose-500/30">0 Overdue</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4">Invoice #</th>
+                    <th class="py-3 px-4">Customer</th>
+                    <th class="py-3 px-4">Due Date</th>
+                    <th class="py-3 px-4">Aging</th>
+                    <th class="py-3 px-4">Balance Owed</th>
+                    <th class="py-3 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="overdueTableBody" class="divide-y divide-slate-800/60">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: SUBSCRIPTIONS & QUOTES -->
+        <section id="view-subscriptions" class="view-panel hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Subscriptions & Quotes</h2>
+              <p class="text-sm text-slate-400 mt-1">Lifecycle tracking: Draft &rarr; Quotation &rarr; Confirmed &rarr; Active &rarr; Closed</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="openNewSubscriptionModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-blue-600/20">
+                <i data-lucide="plus" class="w-4 h-4"></i> New Subscription / Quote
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar -->
+          <div class="flex flex-wrap items-center gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs">
+            <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+              <input type="text" id="subSearchInput" placeholder="Search by sub #, customer, company..." class="bg-transparent border-0 text-slate-200 placeholder-slate-500 focus:outline-none w-full" oninput="loadSubscriptions()">
+            </div>
+            <select id="subStatusFilter" onchange="loadSubscriptions()" class="bg-slate-900 border border-slate-700 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none">
+              <option value="">All Statuses</option>
+              <option value="Draft">Draft</option>
+              <option value="Quotation">Quotation</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Active">Active</option>
+              <option value="Paused">Paused</option>
+              <option value="Closed">Closed</option>
+            </select>
+            <select id="subPlanFilter" onchange="loadSubscriptions()" class="bg-slate-900 border border-slate-700 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none">
+              <option value="">All Plans</option>
+            </select>
+          </div>
+
+          <!-- Subscriptions Table -->
+          <div class="bg-slate-950/70 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4">Subscription #</th>
+                    <th class="py-3 px-4">Customer</th>
+                    <th class="py-3 px-4">Plan & Cycle</th>
+                    <th class="py-3 px-4">Recurring Total</th>
+                    <th class="py-3 px-4">Next Billing</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="subscriptionsTableBody" class="divide-y divide-slate-800/60">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: BILLING DAY ENGINE -->
+        <section id="view-billing" class="view-panel hidden space-y-6">
+          <div class="bg-gradient-to-r from-blue-900/40 via-indigo-900/30 to-slate-900 border border-blue-500/30 p-6 rounded-2xl relative overflow-hidden">
+            <div class="max-w-2xl space-y-3">
+              <span class="inline-flex items-center gap-1.5 bg-blue-500/20 text-blue-300 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-blue-500/30">
+                <i data-lucide="calendar" class="w-3.5 h-3.5"></i> The Billing Day Scene
+              </span>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Automated Recurring Billing Engine</h2>
+              <p class="text-sm text-slate-300">
+                Hundreds of subscriptions due at once? No manual typing. One-click batch billing generates invoices from active subscriptions with customer details, product lines, taxes and discounts applied automatically. Idempotency guarantees: nothing is billed twice or skipped.
+              </p>
+              <div class="flex flex-wrap items-center gap-3 pt-2">
+                <div class="flex items-center gap-2 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
+                  <span class="text-slate-400">Target Billing Date:</span>
+                  <input type="date" id="billingTargetDate" class="bg-transparent border-0 text-white font-mono focus:outline-none">
+                </div>
+                <button onclick="executeBillingDay()" id="btnRunBilling" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-2 rounded-xl transition flex items-center gap-2 shadow-lg shadow-emerald-600/30">
+                  <i data-lucide="play" class="w-4 h-4 fill-white"></i> Run Billing Day Now
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Billing Day Execution Log / Results -->
+          <div id="billingResultsCard" class="hidden bg-slate-950/80 border border-emerald-500/30 p-5 rounded-2xl space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> Billing Batch Execution Summary
+              </h3>
+              <span id="billingSummaryBadge" class="bg-emerald-500/20 text-emerald-300 text-xs font-mono px-2.5 py-1 rounded-full"></span>
+            </div>
+            <div id="billingBatchOutput" class="text-xs space-y-2">
+              <!-- Logs populated -->
+            </div>
+          </div>
+
+          <!-- Subscriptions Due Preview -->
+          <div class="bg-slate-950/70 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-white">Active Subscriptions Due For Billing</h3>
+                <p class="text-xs text-slate-400">Subscriptions with Next Billing Date &le; selected date</p>
+              </div>
+              <span id="dueSubsCountBadge" class="bg-blue-500/20 text-blue-300 text-xs font-mono px-2.5 py-1 rounded-full border border-blue-500/30">0 Due</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4">Subscription #</th>
+                    <th class="py-3 px-4">Customer</th>
+                    <th class="py-3 px-4">Plan</th>
+                    <th class="py-3 px-4">Cycle</th>
+                    <th class="py-3 px-4">Recurring Amount</th>
+                    <th class="py-3 px-4">Next Billing Date</th>
+                    <th class="py-3 px-4 text-right">Individual Action</th>
+                  </tr>
+                </thead>
+                <tbody id="dueSubscriptionsTableBody" class="divide-y divide-slate-800/60">
+                  <!-- Populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: INVOICES -->
+        <section id="view-invoices" class="view-panel hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Invoices</h2>
+              <p class="text-sm text-slate-400 mt-1">Lifecycle: Draft &rarr; Confirmed &rarr; Paid | Print, Send, and Collect</p>
+            </div>
+          </div>
+
+          <!-- Invoices Toolbar -->
+          <div class="flex flex-wrap items-center gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs">
+            <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+              <input type="text" id="invSearchInput" placeholder="Search invoices or customer..." class="bg-transparent border-0 text-slate-200 placeholder-slate-500 focus:outline-none w-full" oninput="loadInvoices()">
+            </div>
+            <select id="invStatusFilter" onchange="loadInvoices()" class="bg-slate-900 border border-slate-700 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none">
+              <option value="">All Invoices</option>
+              <option value="Draft">Draft</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Paid">Paid</option>
+              <option value="Cancelled">Cancelled</option>
+              <option value="OVERDUE">Overdue Only</option>
+            </select>
+          </div>
+
+          <!-- Invoices Table -->
+          <div class="bg-slate-950/70 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4">Invoice #</th>
+                    <th class="py-3 px-4">Customer</th>
+                    <th class="py-3 px-4">Issue Date</th>
+                    <th class="py-3 px-4">Due Date</th>
+                    <th class="py-3 px-4">Total</th>
+                    <th class="py-3 px-4">Balance Due</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="invoicesTableBody" class="divide-y divide-slate-800/60">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 5: PAYMENTS LEDGER -->
+        <section id="view-payments" class="view-panel hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Payments Ledger</h2>
+              <p class="text-sm text-slate-400 mt-1">Recorded payments against invoices with methods, amounts, and settlement status.</p>
+            </div>
+            <button onclick="openRecordPaymentModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/20">
+              <i data-lucide="plus" class="w-4 h-4"></i> Record Payment
+            </button>
+          </div>
+
+          <div class="bg-slate-950/70 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4">Payment #</th>
+                    <th class="py-3 px-4">Invoice #</th>
+                    <th class="py-3 px-4">Customer</th>
+                    <th class="py-3 px-4">Method</th>
+                    <th class="py-3 px-4">Amount</th>
+                    <th class="py-3 px-4">Date</th>
+                    <th class="py-3 px-4">Recorded By</th>
+                    <th class="py-3 px-4">Reference Note</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentsTableBody" class="divide-y divide-slate-800/60">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 6: PRODUCTS & VARIANTS -->
+        <section id="view-products" class="view-panel hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Products & Variants</h2>
+              <p class="text-sm text-slate-400 mt-1">Manage software catalog, add-ons, and variant options (e.g., Odoo brand adds +$560).</p>
+            </div>
+            <button onclick="openNewProductModal()" class="admin-only-btn bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-blue-600/20">
+              <i data-lucide="plus" class="w-4 h-4"></i> Add Product
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="productsCardsGrid">
+            <!-- Populated by JS -->
+          </div>
+        </section>
+
+        <!-- TAB 7: PLANS & POLICIES -->
+        <section id="view-plans" class="view-panel hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Subscription Plans & Rules</h2>
+              <p class="text-sm text-slate-400 mt-1">Configure pricing, billing intervals (daily, weekly, monthly, yearly), and auto-close / pause / renewal flags.</p>
+            </div>
+            <button onclick="openNewPlanModal()" class="admin-only-btn bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-blue-600/20">
+              <i data-lucide="plus" class="w-4 h-4"></i> Create Plan
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="plansCardsGrid">
+            <!-- Populated by JS -->
+          </div>
+        </section>
+
+        <!-- TAB 8: QUOTATION TEMPLATES -->
+        <section id="view-templates" class="view-panel hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Quotation Templates</h2>
+              <p class="text-sm text-slate-400 mt-1">Standardized offer templates with pre-configured plans, product lines, and validity periods.</p>
+            </div>
+            <button onclick="openNewTemplateModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-blue-600/20">
+              <i data-lucide="plus" class="w-4 h-4"></i> Create Template
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="templatesCardsGrid">
+            <!-- Populated by JS -->
+          </div>
+        </section>
+
+        <!-- TAB 9: TAXES & DISCOUNTS (ADMIN ONLY) -->
+        <section id="view-discounts-taxes" class="view-panel hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Taxes & Automated Discount Rules</h2>
+              <p class="text-sm text-slate-400 mt-1">Admin configuration: fixed/percentage discounts, minimum purchase limits, and automatic billing-day application.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="openNewTaxModal()" class="admin-only-btn bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Tax Rule
+              </button>
+              <button onclick="openNewDiscountModal()" class="admin-only-btn bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-blue-600/20">
+                <i data-lucide="plus" class="w-4 h-4"></i> Create Discount Rule
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Taxes Box -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 space-y-4">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="calculator" class="w-4 h-4 text-emerald-400"></i> Tax Calculation Rules
+              </h3>
+              <div id="taxesListContainer" class="space-y-2">
+                <!-- Populated -->
+              </div>
+            </div>
+
+            <!-- Discounts Box -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 space-y-4">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="tag" class="w-4 h-4 text-indigo-400"></i> Active Discount Rules
+              </h3>
+              <div id="discountsListContainer" class="space-y-2">
+                <!-- Populated -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 10: STAFF MANAGEMENT (ADMIN ONLY) -->
+        <section id="view-staff" class="view-panel hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Staff Management & Role-Based Access</h2>
+              <p class="text-sm text-slate-400 mt-1">Enforce security rule: Only the admin can add a new member of staff.</p>
+            </div>
+            <button onclick="openAddStaffModal()" class="admin-only-btn bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-amber-600/20">
+              <i data-lucide="user-plus" class="w-4 h-4"></i> Add Staff Member
+            </button>
+          </div>
+
+          <div class="bg-slate-950/70 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4">Name</th>
+                    <th class="py-3 px-4">Email</th>
+                    <th class="py-3 px-4">Role</th>
+                    <th class="py-3 px-4">Access Level</th>
+                    <th class="py-3 px-4">Created Date</th>
+                  </tr>
+                </thead>
+                <tbody id="staffTableBody" class="divide-y divide-slate-800/60">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 11: CUSTOMER SELF-SERVICE PORTAL -->
+        <section id="view-portal" class="view-panel hidden space-y-6">
+          <div class="bg-gradient-to-r from-emerald-950/40 via-teal-900/30 to-slate-900 border border-emerald-500/30 p-6 rounded-2xl">
+            <div class="max-w-2xl space-y-2">
+              <span class="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                <i data-lucide="user-check" class="w-3.5 h-3.5"></i> Customer Self-Service
+              </span>
+              <h2 class="text-2xl font-bold text-white tracking-tight">Customer Portal</h2>
+              <p class="text-sm text-slate-300">
+                Customers see and manage their own subscriptions without emailing anyone: switch add-ons on/off, review quotation offers, download invoices and settle balances online.
+              </p>
+            </div>
+          </div>
+
+          <!-- Customer Subscriptions List with Interactive Add-on Toggles -->
+          <div class="space-y-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="layers" class="w-4 h-4 text-emerald-400"></i> My Active Subscriptions & Add-Ons
+            </h3>
+            <div id="customerSubsContainer" class="space-y-4">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Customer Invoices & Online Pay -->
+          <div class="space-y-4 pt-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="file-text" class="w-4 h-4 text-amber-400"></i> My Billing & Invoices
+            </h3>
+            <div class="bg-slate-950/70 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                    <tr>
+                      <th class="py-3 px-4">Invoice #</th>
+                      <th class="py-3 px-4">Issue Date</th>
+                      <th class="py-3 px-4">Due Date</th>
+                      <th class="py-3 px-4">Total Amount</th>
+                      <th class="py-3 px-4">Balance Owed</th>
+                      <th class="py-3 px-4">Status</th>
+                      <th class="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="customerInvoicesTableBody" class="divide-y divide-slate-800/60">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 12: AUDIT TRAIL -->
+        <section id="view-audit" class="view-panel hidden space-y-6">
+          <div>
+            <h2 class="text-2xl font-bold text-white tracking-tight">System Audit Trail</h2>
+            <p class="text-sm text-slate-400 mt-1">Immutable ledger of automated billing events, status transitions, and payments.</p>
+          </div>
+
+          <div class="bg-slate-950/70 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs font-mono">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-sans border-b border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4">Timestamp</th>
+                    <th class="py-3 px-4">User</th>
+                    <th class="py-3 px-4">Action</th>
+                    <th class="py-3 px-4">Entity</th>
+                    <th class="py-3 px-4">Details</th>
+                  </tr>
+                </thead>
+                <tbody id="auditTableBody" class="divide-y divide-slate-800/60">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== MODALS & DRAWERS ==================== -->
+
+  <!-- AUTH MODAL (Login, Signup, Forgot Password) -->
+  <div id="modalAuth" class="modal-backdrop hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+      <button onclick="closeModal('modalAuth')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Auth Tabs: Sign In / Sign Up / Forgot -->
+      <div class="flex border-b border-slate-800 mb-5 text-sm font-semibold">
+        <button onclick="switchAuthMode('signin')" id="tabAuthSignin" class="pb-2.5 px-4 text-blue-400 border-b-2 border-blue-500">Sign In</button>
+        <button onclick="switchAuthMode('signup')" id="tabAuthSignup" class="pb-2.5 px-4 text-slate-400 hover:text-white">Create Account</button>
+        <button onclick="switchAuthMode('forgot')" id="tabAuthForgot" class="pb-2.5 px-4 text-slate-400 hover:text-white">Reset Password</button>
+      </div>
+
+      <!-- Sign In Form -->
+      <form id="formSignIn" onsubmit="handleFormSignIn(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Email Address</label>
+          <input type="email" id="signInEmail" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="you@company.com">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Password</label>
+          <input type="password" id="signInPassword" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="••••••••">
+        </div>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl transition text-sm">
+          Sign In
+        </button>
+      </form>
+
+      <!-- Sign Up Form with Password Rules Indicator -->
+      <form id="formSignUp" onsubmit="handleFormSignUp(event)" class="hidden space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Full Name / Company Name</label>
+          <input type="text" id="signUpName" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="Acme Software">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Email Address (Must be unique)</label>
+          <input type="email" id="signUpEmail" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="admin@acme.com">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Password</label>
+          <input type="password" id="signUpPassword" oninput="checkPasswordStrength(this.value)" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="Strong password">
+          
+          <!-- Password Rules Checker -->
+          <div class="mt-2 space-y-1 text-[11px] bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
+            <div id="rule-length" class="text-slate-500 flex items-center gap-1.5"><i data-lucide="circle" class="w-3 h-3"></i> More than 8 characters</div>
+            <div id="rule-upper" class="text-slate-500 flex items-center gap-1.5"><i data-lucide="circle" class="w-3 h-3"></i> An uppercase letter (A-Z)</div>
+            <div id="rule-lower" class="text-slate-500 flex items-center gap-1.5"><i data-lucide="circle" class="w-3 h-3"></i> A lowercase letter (a-z)</div>
+            <div id="rule-special" class="text-slate-500 flex items-center gap-1.5"><i data-lucide="circle" class="w-3 h-3"></i> A special character (!@#$%^&*)</div>
+          </div>
+        </div>
+        <button type="submit" id="btnSubmitSignup" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl transition text-sm">
+          Create Account
+        </button>
+      </form>
+
+      <!-- Forgot Password Form -->
+      <form id="formForgot" onsubmit="handleFormForgot(event)" class="hidden space-y-4 text-xs">
+        <p class="text-slate-400">Enter your registered email address and we will generate a secure reset link.</p>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Email Address</label>
+          <input type="email" id="forgotEmail" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="you@company.com">
+        </div>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl transition text-sm">
+          Send Reset Link
+        </button>
+        <div id="forgotSuccessBox" class="hidden p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- INVOICE DETAIL & PRINTABLE PDF MODAL -->
+  <div id="modalInvoice" class="modal-backdrop hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 md:p-8 shadow-2xl relative text-xs">
+      <button onclick="closeModal('modalInvoice')" class="absolute top-4 right-4 text-slate-400 hover:text-white print:hidden">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div id="invoicePrintArea" class="space-y-6">
+        <!-- Header -->
+        <div class="flex justify-between items-start border-b border-slate-800 pb-5">
+          <div>
+            <div class="text-lg font-bold text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold">B</span>
+              Brightloop Software Inc.
+            </div>
+            <div class="text-slate-400 text-[11px] mt-1">100 Innovation Way, Suite 400 &bull; billing@brightloop.com</div>
+          </div>
+          <div class="text-right">
+            <span id="invModalStatusBadge" class="px-2.5 py-1 rounded-full text-xs font-mono font-bold"></span>
+            <div id="invModalNumber" class="text-base font-bold text-white font-mono mt-2">INV-2026-0001</div>
+          </div>
+        </div>
+
+        <!-- Meta Details -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+          <div>
+            <span class="text-slate-500 block text-[10px] uppercase font-semibold">Billed To</span>
+            <div id="invModalCustomerName" class="font-bold text-slate-200 mt-0.5">Acme Retail</div>
+            <div id="invModalCustomerEmail" class="text-slate-400 text-[11px]">acme@shop.com</div>
+            <div id="invModalCustomerAddress" class="text-slate-500 text-[11px]"></div>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-[10px] uppercase font-semibold">Issue Date</span>
+            <div id="invModalIssueDate" class="font-mono text-slate-200 mt-0.5">2026-10-01</div>
+            <span class="text-slate-500 block text-[10px] uppercase font-semibold mt-2">Due Date</span>
+            <div id="invModalDueDate" class="font-mono text-slate-200 mt-0.5">2026-10-16</div>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-[10px] uppercase font-semibold">Subscription Ref</span>
+            <div id="invModalSubNumber" class="font-mono text-blue-400 mt-0.5">SUB-2026-0002</div>
+            <span class="text-slate-500 block text-[10px] uppercase font-semibold mt-2">Billing Period</span>
+            <div id="invModalPeriod" class="text-slate-300 text-[11px] mt-0.5"></div>
+          </div>
+        </div>
+
+        <!-- Line Items Table -->
+        <div class="border border-slate-800 rounded-xl overflow-hidden">
+          <table class="w-full text-left">
+            <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-800">
+              <tr>
+                <th class="py-2.5 px-3">Description</th>
+                <th class="py-2.5 px-3 text-center">Qty</th>
+                <th class="py-2.5 px-3 text-right">Unit Price</th>
+                <th class="py-2.5 px-3 text-right">Tax Rule</th>
+                <th class="py-2.5 px-3 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="invModalLinesBody" class="divide-y divide-slate-800/60">
+              <!-- Lines populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Totals Calculation Box -->
+        <div class="flex justify-end">
+          <div class="w-72 space-y-2 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+            <div class="flex justify-between text-slate-400">
+              <span>Subtotal:</span>
+              <span id="invModalSubtotal" class="font-mono text-white">$0.00</span>
+            </div>
+            <div class="flex justify-between text-emerald-400">
+              <span>Discounts Applied:</span>
+              <span id="invModalDiscounts" class="font-mono">-$0.00</span>
+            </div>
+            <div class="flex justify-between text-slate-400">
+              <span>Taxes:</span>
+              <span id="invModalTaxes" class="font-mono text-white">+$0.00</span>
+            </div>
+            <div class="border-t border-slate-800 pt-2 flex justify-between text-sm font-bold text-white">
+              <span>Total Amount:</span>
+              <span id="invModalTotal" class="font-mono text-blue-400">$0.00</span>
+            </div>
+            <div class="flex justify-between text-slate-400">
+              <span>Amount Paid:</span>
+              <span id="invModalPaid" class="font-mono text-emerald-400">$0.00</span>
+            </div>
+            <div class="border-t border-slate-800 pt-2 flex justify-between text-sm font-bold text-white">
+              <span>Balance Due:</span>
+              <span id="invModalBalance" class="font-mono text-rose-400">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payments Log on Invoice -->
+        <div id="invModalPaymentsSection" class="space-y-2">
+          <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Payment History</h4>
+          <div id="invModalPaymentsList" class="space-y-1"></div>
+        </div>
+      </div>
+
+      <!-- Footer Action Buttons -->
+      <div class="mt-6 pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <div class="flex items-center gap-2" id="invModalStateActions">
+          <!-- Dynamic state buttons: Confirm, Send, Cancel -->
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+            <i data-lucide="printer" class="w-4 h-4"></i> Print / PDF
+          </button>
+          <button onclick="openPayFromInvoiceModal()" id="btnInvModalPay" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5">
+            <i data-lucide="credit-card" class="w-4 h-4"></i> Pay Now
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECORD PAYMENT MODAL -->
+  <div id="modalPayment" class="modal-backdrop hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative text-xs">
+      <button onclick="closeModal('modalPayment')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <h3 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+        <i data-lucide="credit-card" class="w-4 h-4 text-emerald-400"></i> Record Payment
+      </h3>
+      <p class="text-slate-400 mb-4">Record incoming funds against an outstanding invoice.</p>
+
+      <form id="formPayment" onsubmit="handleFormPayment(event)" class="space-y-3">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Select Invoice</label>
+          <select id="payInvoiceSelect" required onchange="updatePayInvoiceDetails()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none">
+            <!-- Invoices options -->
+          </select>
+        </div>
+        <div id="payInvoiceBalanceNote" class="text-amber-400 font-mono bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+          Outstanding Balance: $0.00
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Amount to Pay ($)</label>
+          <input type="number" step="0.01" id="payAmountInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500" placeholder="0.00">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Payment Method</label>
+          <select id="payMethodSelect" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none">
+            <option value="Bank Transfer">Bank Transfer (ACH / Wire)</option>
+            <option value="Credit Card">Credit Card</option>
+            <option value="Stripe">Stripe Online</option>
+            <option value="Check">Check</option>
+            <option value="Cash">Cash</option>
+            <option value="Wire Transfer">Wire Transfer</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Payment Date</label>
+          <input type="date" id="payDateInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Reference Note / Transaction ID</label>
+          <input type="text" id="payRefInput" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none" placeholder="e.g. Wire confirmation WT-94821">
+        </div>
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition text-sm shadow-lg shadow-emerald-600/30">
+          Record Payment
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- NEW SUBSCRIPTION / QUOTE MODAL -->
+  <div id="modalNewSub" class="modal-backdrop hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl relative text-xs">
+      <button onclick="closeModal('modalNewSub')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <h3 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+        <i data-lucide="file-plus" class="w-4 h-4 text-blue-400"></i> Turn Quote into Subscription
+      </h3>
+      <p class="text-slate-400 mb-4">Start from a standardized quotation template or configure custom product lines.</p>
+
+      <form id="formNewSub" onsubmit="handleFormNewSub(event)" class="space-y-4">
+        <!-- Template Selection -->
+        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+          <label class="block text-slate-300 font-medium mb-1">Apply Quotation Template (Optional)</label>
+          <select id="newSubTemplateSelect" onchange="applyTemplateToNewSub()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none">
+            <option value="">-- Choose a template to pre-populate --</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Customer</label>
+            <select id="newSubCustomerSelect" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none">
+              <!-- Customers -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Subscription Plan</label>
+            <select id="newSubPlanSelect" required onchange="handlePlanSelectChange()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none">
+              <!-- Plans -->
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Start Date</label>
+            <input type="date" id="newSubStartDate" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Expiry Date (Optional)</label>
+            <input type="date" id="newSubExpiryDate" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Payment Terms</label>
+            <select id="newSubTermsSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none">
+              <option value="Net 30">Net 30 Days</option>
+              <option value="Net 15">Net 15 Days</option>
+              <option value="Net 60">Net 60 Days</option>
+              <option value="Due on Receipt">Due on Receipt</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Line Items Builder -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-slate-300">Subscription Products & Add-ons</span>
+            <button type="button" onclick="addNewSubLineRow()" class="text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium">
+              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add Line
+            </button>
+          </div>
+          <div id="newSubLinesContainer" class="space-y-2">
+            <!-- Dynamic product line rows -->
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Notes / Terms</label>
+          <textarea id="newSubNotes" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white placeholder-slate-500 focus:outline-none" placeholder="Contract details..."></textarea>
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl transition text-sm shadow-lg shadow-blue-600/30">
+          Create Subscription Offer
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD STAFF MODAL (Admin only) -->
+  <div id="modalStaff" class="modal-backdrop hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative text-xs">
+      <button onclick="closeModal('modalStaff')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <h3 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+        <i data-lucide="user-plus" class="w-4 h-4 text-amber-400"></i> Add Internal Staff Member
+      </h3>
+      <p class="text-slate-400 mb-4">Only the admin can add internal staff members.</p>
+
+      <form id="formAddStaff" onsubmit="handleFormAddStaff(event)" class="space-y-3">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Full Name</label>
+          <input type="text" id="staffNameInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none" placeholder="Mark Thompson">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Email Address</label>
+          <input type="email" id="staffEmailInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none" placeholder="mark@brightloop.com">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Temporary Password</label>
+          <input type="password" id="staffPassInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none" placeholder="StaffLoop@2026">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">System Role</label>
+          <select id="staffRoleSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none">
+            <option value="staff">Internal Staff (Sales, Quotes, Billing)</option>
+            <option value="admin">System Administrator (Full Access)</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded-xl transition text-sm">
+          Save Staff Member
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD PRODUCT MODAL -->
+  <div id="modalProduct" class="modal-backdrop hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative text-xs">
+      <button onclick="closeModal('modalProduct')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <h3 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+        <i data-lucide="box" class="w-4 h-4 text-violet-400"></i> Launch New Product & Variants
+      </h3>
+      <p class="text-slate-400 mb-4">Add product name, type, prices, and configure variants (e.g. Odoo brand adds +$560).</p>
+
+      <form id="formProduct" onsubmit="handleFormProduct(event)" class="space-y-3">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Product Name</label>
+          <input type="text" id="prodNameInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none" placeholder="Enterprise ERP Platform">
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Product Type</label>
+            <select id="prodTypeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none">
+              <option value="software">Software</option>
+              <option value="addon">Add-on</option>
+              <option value="service">Service</option>
+              <option value="hardware">Hardware</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Sales Price ($)</label>
+            <input type="number" step="0.01" id="prodSalesPriceInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none" placeholder="1200.00">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Cost Price ($)</label>
+            <input type="number" step="0.01" id="prodCostPriceInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none" placeholder="300.00">
+          </div>
+        </div>
+
+        <!-- Variants Section -->
+        <div class="space-y-2 pt-2 border-t border-slate-800">
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-slate-300">Product Variants (e.g. Brand connector)</span>
+            <button type="button" onclick="addProductVariantRow()" class="text-violet-400 hover:text-violet-300 flex items-center gap-1 font-medium">
+              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add Variant
+            </button>
+          </div>
+          <div id="productVariantsContainer" class="space-y-2">
+            <!-- Dynamic variant rows -->
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Notes</label>
+          <textarea id="prodNotesInput" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white focus:outline-none" placeholder="Product specs..."></textarea>
+        </div>
+
+        <button type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-2.5 rounded-xl transition text-sm">
+          Save Product & Variants
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD PLAN MODAL -->
+  <div id="modalPlan" class="modal-backdrop hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative text-xs">
+      <button onclick="closeModal('modalPlan')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <h3 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+        <i data-lucide="tag" class="w-4 h-4 text-pink-400"></i> Configure Subscription Plan
+      </h3>
+      <p class="text-slate-400 mb-4">Set pricing, billing frequency, and lifecycle control policies.</p>
+
+      <form id="formPlan" onsubmit="handleFormPlan(event)" class="space-y-3">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">Plan Name</label>
+          <input type="text" id="planNameInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none" placeholder="Enterprise Annual Tier">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Base Cost ($)</label>
+            <input type="number" step="0.01" id="planCostInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none" placeholder="1200.00">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Billing Frequency</label>
+            <select id="planFreqSelect" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none">
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+              <option value="weekly">Weekly</option>
+              <option value="daily">Daily</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Valid From</label>
+            <input type="date" id="planValidFromInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Valid To (Optional)</label>
+            <input type="date" id="planValidToInput" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Plan Lifecycle Policies -->
+        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-2">
+          <span class="block font-semibold text-slate-300 mb-1">Lifecycle Rules (Configured Plan by Plan)</span>
+          <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+            <input type="checkbox" id="planAutoCloseCheckbox" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+            <span>Auto-close on its own when plan ends</span>
+          </label>
+          <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+            <input type="checkbox" id="planEarlyCloseCheckbox" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+            <span>Allow early cancellation / closure</span>
+          </label>
+          <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+            <input type="checkbox" id="planAllowPauseCheckbox" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+            <span>Allow subscription pausing</span>
+          </label>
+          <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+            <input type="checkbox" id="planAllowRenewalCheckbox" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+            <span>Allow renewals</span>
+          </label>
+        </div>
+
+        <button type="submit" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-2.5 rounded-xl transition text-sm">
+          Save Plan
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD DISCOUNT MODAL (Admin only) -->
+  <div id="modalDiscount" class="modal-backdrop hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative text-xs">
+      <button onclick="closeModal('modalDiscount')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <h3 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+        <i data-lucide="percent" class="w-4 h-4 text-orange-400"></i> Create Discount Rule
+      </h3>
+      <p class="text-slate-400 mb-4">Only admin can create discount rules. Applies automatically on billing day.</p>
+
+      <form id="formDiscount" onsubmit="handleFormDiscount(event)" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Discount Code</label>
+            <input type="text" id="discCodeInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono uppercase focus:outline-none" placeholder="SAVE20">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Rule Name</label>
+            <input type="text" id="discNameInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none" placeholder="Volume Saver Discount">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Discount Type</label>
+            <select id="discTypeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none">
+              <option value="percentage">Percentage (%)</option>
+              <option value="fixed">Fixed Amount ($)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Value (e.g. 15 for 15% or 200 for $200)</label>
+            <input type="number" step="0.01" id="discValueInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none" placeholder="15">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Min Purchase Amount ($)</label>
+            <input type="number" step="0.01" id="discMinAmountInput" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none" placeholder="0">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Min Quantity (Seats)</label>
+            <input type="number" id="discMinQtyInput" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none" placeholder="0">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Start Date</label>
+            <input type="date" id="discStartInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">End Date</label>
+            <input type="date" id="discEndInput" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Max Usages (0 = Unlimited)</label>
+            <input type="number" id="discMaxUsesInput" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none" placeholder="0">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">Scope</label>
+            <select id="discScopeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none">
+              <option value="subscription">Whole Subscription</option>
+              <option value="product">Specific Product</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-2.5 rounded-xl transition text-sm">
+          Save Discount Rule
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-24 transition-all duration-300 ease-out bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs max-w-sm">
+    <div id="toastIcon"></div>
+    <div id="toastMsg" class="font-medium">Notification</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+

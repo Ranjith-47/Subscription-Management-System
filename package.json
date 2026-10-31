@@ -1,0 +1,22 @@
+{
+  "name": "brightloop-subscription-system",
+  "version": "1.0.0",
+  "description": "Unified Subscription & Recurring Billing Platform for Brightloop Software",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node src/db/seed.js",
+    "test": "node src/tests/run_tests.js && node src/tests/test_api_endpoints.js"
+  },
+  "keywords": [
+    "subscription-management",
+    "recurring-billing",
+    "invoicing",
+    "payments",
+    "mrr",
+    "brightloop"
+  ],
+  "author": "Antigravity Pair Programmer",
+  "license": "MIT",
+  "type": "commonjs"
+}

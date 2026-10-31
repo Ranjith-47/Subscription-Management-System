@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.kilo/
+.dist/
+src/db/*.db
+src/db/*.db-wal
+src/db/*.db-shm
